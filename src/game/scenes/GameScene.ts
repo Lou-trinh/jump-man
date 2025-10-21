@@ -9,8 +9,9 @@ class GameScene extends Scene {
     private barrierSpacing: number = 550;
     private score: number = 0;
     private scoreText: Phaser.GameObjects.Text;
-    private passedBarriers: Set<Phaser.GameObjects.Image> = new Set();
     private isGameOver: boolean = false;
+    private distanceTraveled: number = 0;
+    private lastSpeedIncreaseScore: number = 0;
 
     constructor() {
         super('GameScene');
@@ -42,10 +43,11 @@ class GameScene extends Scene {
     create() {
         this.grounds = [];
         this.barriers = [];
-        this.passedBarriers = new Set();
         this.isJumping = false;
         this.isGameOver = false;
         this.score = 0;
+        this.distanceTraveled = 0;
+        this.lastSpeedIncreaseScore = 0;
 
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
@@ -72,7 +74,7 @@ class GameScene extends Scene {
         const numBarriers = Math.ceil(screenWidth / this.barrierSpacing) + 2;
 
         for (let i = 0; i < numBarriers; i++) {
-            const barrierX = screenWidth + (i * this.barrierSpacing);
+            const barrierX = screenWidth + (i * this.barrierSpacing) + Phaser.Math.Between(0, 200);
             const barrier = this.add.image(barrierX, barrierY, 'barrier');
             barrier.setScale(0.5, 0.5);
             barrier.setOrigin(0.5, 1);
@@ -103,29 +105,30 @@ class GameScene extends Scene {
         this.player = this.add.sprite(startX, startY, 'player1');
         this.player.setScale(2.5, 2.5);
         this.player.play('player-run');
-        
-        
+
+
         this.scoreText = this.add.text(20, 20, 'Score: 0', {
             fontSize: '32px',
             fontStyle: 'bold italic',
             color: '#000000',
+            backgroundColor: '#ffffff',
         });
         this.scoreText.setDepth(100);
 
         this.input.keyboard?.on('keydown', (event: any) => {
-            console.log(event.code);
-            if (event.code == 'Space' || event.code == 'ArrowUp')
+            if (!this.isGameOver && (event.code == 'Space' || event.code == 'ArrowUp')) {
                 this.jump();
+            }
         });
         this.input.on('pointerdown', (pointer: any): void => {
-            if(pointer.leftButtonDown()){
+            if(!this.isGameOver && pointer.leftButtonDown()){
                 this.jump();
             }
         });
     }
 
     jump(){
-        if (!this.isJumping) {
+        if (!this.isJumping && !this.isGameOver) {
             this.isJumping = true;
             this.player.play('player-jump');
 
@@ -144,7 +147,9 @@ class GameScene extends Scene {
                         ease: 'Quad.easeIn',
                         onComplete: () => {
                             this.isJumping = false;
-                            this.player.play('player-run');
+                            if (!this.isGameOver) {
+                                this.player.play('player-run');
+                            }
                         }
                     });
                 }
@@ -156,6 +161,15 @@ class GameScene extends Scene {
         if (this.isGameOver) return;
 
         const screenWidth = window.innerWidth;
+        
+        this.distanceTraveled += this.groundSpeed * (this.game.loop.delta / 1000);
+        this.score = Math.floor(this.distanceTraveled / 10);
+        this.scoreText.setText('Score: ' + this.score);
+        
+        if (this.score - this.lastSpeedIncreaseScore >= 1000) {
+            this.groundSpeed += 50;
+            this.lastSpeedIncreaseScore = this.score;
+        }
 
         this.grounds.forEach((ground) => {
             ground.x -= this.groundSpeed * (this.game.loop.delta / 1000);
@@ -167,12 +181,10 @@ class GameScene extends Scene {
 
         this.barriers.forEach((barrier) => {
             barrier.x -= this.groundSpeed * (this.game.loop.delta / 1000);
-            
-            
+
             const playerBounds = this.player.getBounds();
             const barrierBounds = barrier.getBounds();
 
-            
             const playerHitbox = new Phaser.Geom.Rectangle(
                 playerBounds.x + playerBounds.width * 0.2,
                 playerBounds.y + playerBounds.height * 0.2,
@@ -180,7 +192,6 @@ class GameScene extends Scene {
                 playerBounds.height * 0.2
             );
 
-            
             const barrierHitbox = new Phaser.Geom.Rectangle(
                 barrierBounds.x + barrierBounds.width * 0.1,
                 barrierBounds.y + barrierBounds.height * 0.1,
@@ -193,28 +204,21 @@ class GameScene extends Scene {
                 return;
             }
 
-            
-            if (!this.passedBarriers.has(barrier) && barrier.x < this.player.x) {
-                this.passedBarriers.add(barrier);
-                this.score++;
-                this.scoreText.setText('Score: ' + this.score);
-            }
-
             if (barrier.x <= -100) {
-                
-                this.passedBarriers.delete(barrier);
-
                 let maxX = -Infinity;
                 this.barriers.forEach(b => {
                     if (b.x > maxX) maxX = b.x;
                 });
-                barrier.x = maxX + this.barrierSpacing;
+                const randomSpacing = Phaser.Math.Between(400, 700);
+                barrier.x = maxX + randomSpacing;
             }
         });
     }
 
     gameOver() {
         this.isGameOver = true;
+        
+        this.player.stop();
 
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;

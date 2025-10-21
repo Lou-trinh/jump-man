@@ -1,4 +1,4 @@
-const URL = 'ws://localhost:8080';
+const URL = 'ws://192.168.1.184:8080';
 
 const webSocket = {
     getWebSocket(uri: string): WebSocket {
