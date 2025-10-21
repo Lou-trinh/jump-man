@@ -18,6 +18,7 @@ class Game extends Scene
         this.load.image('background', 'assets/bg.jpeg');
         this.load.image('ground', 'assets/ground.png');
         this.load.image('barrier', 'assets/barrier.png');
+        this.load.image('bird', 'assets/bird.png');
     }
 
     create ()

@@ -161,13 +161,15 @@ class GameScene extends Scene {
         if (this.isGameOver) return;
 
         const screenWidth = window.innerWidth;
-        
+
+        // Tính điểm theo quãng đường
         this.distanceTraveled += this.groundSpeed * (this.game.loop.delta / 1000);
         this.score = Math.floor(this.distanceTraveled / 10);
         this.scoreText.setText('Score: ' + this.score);
-        
-        if (this.score - this.lastSpeedIncreaseScore >= 1000) {
-            this.groundSpeed += 50;
+
+        // Tăng tốc độ mỗi 2000 điểm
+        if (this.score - this.lastSpeedIncreaseScore >= 2000) {
+            this.groundSpeed += 30;
             this.lastSpeedIncreaseScore = this.score;
         }
 
@@ -209,6 +211,7 @@ class GameScene extends Scene {
                 this.barriers.forEach(b => {
                     if (b.x > maxX) maxX = b.x;
                 });
+                // Random khoảng cách khi reset barrier
                 const randomSpacing = Phaser.Math.Between(400, 700);
                 barrier.x = maxX + randomSpacing;
             }
@@ -217,7 +220,8 @@ class GameScene extends Scene {
 
     gameOver() {
         this.isGameOver = true;
-        
+
+        // Dừng animation của player
         this.player.stop();
 
         const screenWidth = window.innerWidth;
