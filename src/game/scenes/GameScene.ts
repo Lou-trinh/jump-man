@@ -125,9 +125,11 @@ class GameScene extends Scene {
         this.player.setScale(2.5, 2.5);
         this.player.play('player-run');
         
-        this.bird = this.add.sprite(startX,startY, 'bird');
+        this.bird = this.add.sprite(startX + 600, startY -300, 'bird');
         this.bird.setScale(2,2);
-
+        // this.bird.play('bird');
+        
+        
 
         this.scoreText = this.add.text(20, 20, 'Score: 0', {
             fontSize: '32px',
@@ -230,7 +232,6 @@ class GameScene extends Scene {
                 this.barriers.forEach(b => {
                     if (b.x > maxX) maxX = b.x;
                 });
-                // Random khoảng cách khi reset barrier
                 const randomSpacing = Phaser.Math.Between(400, 700);
                 barrier.x = maxX + randomSpacing;
             }
