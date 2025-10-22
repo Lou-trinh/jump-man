@@ -3,6 +3,7 @@ import { Scene } from 'phaser';
 class GameScene extends Scene {
     private player: Phaser.GameObjects.Sprite;
     private grounds: Phaser.GameObjects.Image[] = [];
+    private bird: Phaser.GameObjects.Sprite;
     private barriers: Phaser.GameObjects.Image[] = [];
     private isJumping = false;
     private groundSpeed: number = 300;
@@ -38,6 +39,15 @@ class GameScene extends Scene {
                 frameHeight: 80,
             }
         );
+        
+        this.load.spritesheet(
+            'bird',
+            'bird.png',
+            {
+                frameWidth: 32,
+                frameHeight: 32,
+            }
+        )
     }
 
     create() {
@@ -98,6 +108,15 @@ class GameScene extends Scene {
                 repeat: -1
             },
         );
+        
+        this.anims.create(
+            {
+                key: 'bird',
+                frames: this.anims.generateFrameNumbers('bird', {start: 1, end: 3}),
+                frameRate: 10,
+                repeat: -2
+            }
+        )
 
         const startX = screenWidth - 1600;
         const startY = screenHeight - 75;
@@ -105,13 +124,15 @@ class GameScene extends Scene {
         this.player = this.add.sprite(startX, startY, 'player1');
         this.player.setScale(2.5, 2.5);
         this.player.play('player-run');
+        
+        this.bird = this.add.sprite(startX,startY, 'bird');
+        this.bird.setScale(2,2);
 
 
         this.scoreText = this.add.text(20, 20, 'Score: 0', {
             fontSize: '32px',
             fontStyle: 'bold italic',
             color: '#000000',
-            backgroundColor: '#ffffff',
         });
         this.scoreText.setDepth(100);
 
@@ -209,6 +230,7 @@ class GameScene extends Scene {
                 this.barriers.forEach(b => {
                     if (b.x > maxX) maxX = b.x;
                 });
+                // Random khoảng cách khi reset barrier
                 const randomSpacing = Phaser.Math.Between(400, 700);
                 barrier.x = maxX + randomSpacing;
             }
