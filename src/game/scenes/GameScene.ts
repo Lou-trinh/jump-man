@@ -3,7 +3,9 @@ import { Scene } from 'phaser';
 class GameScene extends Scene {
     private player: Phaser.GameObjects.Sprite;
     private grounds: Phaser.GameObjects.Image[] = [];
-    private bird: Phaser.GameObjects.Sprite;
+    private bird: Phaser.GameObjects.Image[] = [];
+    // private bird: Phaser.GameObjects.Sprite;
+    private birdSpacing: number = 800;
     private barriers: Phaser.GameObjects.Image[] = [];
     private isJumping = false;
     private groundSpeed: number = 300;
@@ -22,7 +24,7 @@ class GameScene extends Scene {
         this.load.setPath('assets');
         this.load.image('background', 'assets/bg.jpeg');
         this.load.image('ground', 'assets/ground.png');
-        this.load.image('barrier', 'assets/barrier.png');
+        // this.load.image('barrier', 'assets/barrier.png');
         this.load.spritesheet(
             'player',
             'player-jump.png',
@@ -39,7 +41,6 @@ class GameScene extends Scene {
                 frameHeight: 80,
             }
         );
-        
         this.load.spritesheet(
             'bird',
             'bird.png',
@@ -53,6 +54,7 @@ class GameScene extends Scene {
     create() {
         this.grounds = [];
         this.barriers = [];
+        // this.bird = [];
         this.isJumping = false;
         this.isGameOver = false;
         this.score = 0;
@@ -90,6 +92,17 @@ class GameScene extends Scene {
             barrier.setOrigin(0.5, 1);
             this.barriers.push(barrier);
         }
+        
+        const birdY = groundY + 200;
+        const numBird = Math.ceil(screenWidth / this.birdSpacing) + 2;
+
+        for ( let i = 0; i < numBird; i++){
+            const birdX = screenWidth + (i * this.birdSpacing) + Phaser.Math.Between(0, 200);
+            const bird = this.add.image(birdX, birdY, 'bird');
+            bird.setScale(1,1);
+            bird.setOrigin(1,2);
+            this.bird.push(bird);
+        }
 
         this.anims.create(
             {
@@ -114,7 +127,7 @@ class GameScene extends Scene {
                 key: 'bird',
                 frames: this.anims.generateFrameNumbers('bird', {start: 1, end: 3}),
                 frameRate: 10,
-                repeat: -2
+                repeat: -1
             }
         )
 
@@ -125,9 +138,8 @@ class GameScene extends Scene {
         this.player.setScale(2.5, 2.5);
         this.player.play('player-run');
         
-        this.bird = this.add.sprite(startX + 600, startY -300, 'bird');
-        this.bird.setScale(2,2);
-        // this.bird.play('bird');
+        // this.bird = this.add.sprite(startX + 500, startY - 200, 'bird');
+        // this.bird.setScale(2, 2);
         
         
 
@@ -234,6 +246,41 @@ class GameScene extends Scene {
                 });
                 const randomSpacing = Phaser.Math.Between(400, 700);
                 barrier.x = maxX + randomSpacing;
+            }
+        });
+
+        this.bird.forEach((bird) => {
+            bird.x -= this.groundSpeed * (this.game.loop.delta / 800);
+
+            const playerBounds = this.player.getBounds();
+            const birdBounds = bird.getBounds();
+
+            const playerHitbox = new Phaser.Geom.Rectangle(
+                playerBounds.x + playerBounds.width * 0.2,
+                playerBounds.y + playerBounds.height * 0.2,
+                playerBounds.width * 0.2,
+                playerBounds.height * 0.2
+            );
+
+            const birdHitbox = new Phaser.Geom.Rectangle(
+                birdBounds.x + birdBounds.width * 0.1,
+                birdBounds.y + birdBounds.height * 0.1,
+                birdBounds.width * 0.4,
+                birdBounds.height * 0.4
+            );
+
+            if (Phaser.Geom.Intersects.RectangleToRectangle(playerHitbox, birdHitbox)) {
+                this.gameOver();
+                return;
+            }
+
+            if (bird.x <= -100) {
+                let maxX = -Infinity;
+                this.bird.forEach(b => {
+                    if (b.x > maxX) maxX = b.x;
+                });
+                const randomSpacing = Phaser.Math.Between(0, 1000);
+                bird.x = maxX + randomSpacing;
             }
         });
     }
